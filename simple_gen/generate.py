@@ -1,6 +1,8 @@
 import os
 import shutil
 import subprocess
+import time
+
 import toml
 from pathlib import Path
 from typing import Optional
@@ -27,7 +29,6 @@ def replace_imports_in_files(directory: str, package_name: str) -> None:
     from_search_pattern = f"from {package_name}"
     import_search_pattern = f"import {package_name}"
     replacement_pattern = f"clients.http.{package_name}"
-
     path = Path(directory)
     for file_path in path.rglob("*.py"):
         with file_path.open("r", encoding="utf-8") as file:
@@ -43,7 +44,6 @@ def replace_imports_in_files(directory: str, package_name: str) -> None:
             )
             updated_lines.append(line)
 
-        print(f"Updated {file_path}, {file_path.is_file()}")
         with file_path.open("w", encoding="utf-8") as file:
             file.writelines(updated_lines)
 
@@ -63,5 +63,5 @@ def generate(template: Optional[str] = None) -> None:
         package_name = http_service["service_name"].replace("-", "_")
         swagger_url = http_service["swagger"]
         generate_api(package_name, swagger_url, template)
-        replace_imports_in_files("clients/http", package_name)
         move_files(package_name)
+        replace_imports_in_files("clients/http", package_name)
