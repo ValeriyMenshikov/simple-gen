@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "simple-gen"
+version = "0.1.0"
+description = ""
+authors = ["Menshikov Valeriy Sergeevich <vmenshikov@ozon.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+cookiecutter = "^2.6.0"
+colorama = "^0.4.6"
+toml = "^0.10.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry.scripts]
+simple_gen = "simple_gen.main:cli"
