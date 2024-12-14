@@ -11,6 +11,7 @@ from cookiecutter.main import cookiecutter
 
 
 def run_command(command: List[str], ignore_error: bool = False) -> str:
+    print(' '.join(command))
     result = subprocess.run(args=command, text=True, capture_output=True)
     print(result.stdout)
     if result.returncode != 0 and not ignore_error:

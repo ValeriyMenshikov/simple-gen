@@ -2,9 +2,10 @@ from typing import Optional
 
 import click
 
-from simple_gen.download import init
-from simple_gen.generate import generate
-from simple_gen.utils import setup
+from simple_gen.internal.generator import Generator
+from simple_gen.utils.download import init
+from simple_gen.utils.generate import generate
+from simple_gen.utils.utils import setup
 
 
 @click.group()
@@ -26,6 +27,7 @@ def init_command() -> None:
 @click.command("generate")
 def generate_command() -> None:
     generate()
+    Generator().generate()
 
 
 cli.add_command(setup_command)

@@ -1,0 +1,56 @@
+import os
+from datetime import datetime
+from pathlib import Path
+from typing import Generator
+
+import pytest
+import structlog
+from vyper import v
+
+{% for client in clients -%}
+import clients.http.{{client.get("package")}} as {{client.get("package") | to_snake_case}}
+{% endfor %}
+
+
+structlog.configure(
+    processors=[
+        structlog.processors.JSONRenderer(
+            indent=4,
+            ensure_ascii=True,
+        )
+    ]
+)
+
+options = (
+    {% for client in clients -%}
+    "service.{{client.get("package") | to_snake_case}}_{{client.get("client") | to_snake_case }}",
+    {% endfor %}
+)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def set_config(request: pytest.FixtureRequest) -> None:
+    config = Path(__file__).parent.joinpath("config")
+    config_name = request.config.getoption("--env")
+    v.set_config_name(config_name)
+    v.add_config_path(config)
+    v.read_in_config()
+    for option in options:
+        v.set(f"{option}", request.config.getoption(f"--{option}"))
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption("--env", action="store", default="stg", help="run stg")
+
+    for option in options:
+        parser.addoption(f"--{option}", action="store", default=None)
+
+
+{% for client in clients %}
+@pytest.fixture
+async def {{client.get("package") | to_snake_case}}_{{client.get("client") | to_snake_case }}() -> {{client.get("package") | to_snake_case}}.{{client.get("client")}}:
+    configuration = {{client.get("package") | to_snake_case}}.Configuration(host=v.get("service.{{client.get("package") | to_snake_case}}_{{client.get("client") | to_snake_case }}"))
+    api_client = {{client.get("package") | to_snake_case}}.ApiClient(configuration=configuration)
+    return {{client.get("package") | to_snake_case}}.{{client.get("client")}}(api_client=api_client)
+{% endfor %}
+

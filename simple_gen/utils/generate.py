@@ -1,20 +1,20 @@
 import os
 import shutil
-import subprocess
-import time
 
 import toml
 from pathlib import Path
 from typing import Optional
-from simple_gen.utils import run_command
+from simple_gen.utils.utils import run_command
 
 
 def generate_api(package_name: str, swagger_url: str, template: Optional[str] = None) -> None:
+    templates = str(Path(__file__).parent.parent / "templates" / "python")
     command = [
         "java", "-jar", ".venv/bin/openapi-generator-cli-7.10.0.jar",
         "generate", "-i", swagger_url,
         "-g", "python",
         "-o", f"./{package_name}",
+        "-t", templates,
         "--library", "asyncio",
         "--package-name", package_name,
         "--skip-validate-spec"
