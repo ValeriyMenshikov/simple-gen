@@ -2,6 +2,7 @@
 
 {{>partial_header}}
 
+import asyncio
 import io
 import json
 import re
@@ -10,6 +11,7 @@ from typing import Optional, Union
 
 import aiohttp
 import aiohttp_retry
+import structlog
 
 from {{packageName}}.exceptions import ApiException, ApiValueError
 
@@ -200,6 +202,32 @@ class RESTClientObject:
         else:
             pool_manager = self.pool_manager
 
-        r = await pool_manager.request(**args)
+        return await self._logged_request(pool_manager, **args)
 
-        return RESTResponse(r)
+    async def _logged_request(self, pool_manager, **args) -> RESTResponse:
+        log = structlog.get_logger().bind(service="api")
+        json_data = args.get("data")
+        log.msg(
+            "request",
+            url=args.get("url", None),
+            method=args.get("method"),
+            json=json.loads(json_data) if isinstance(json_data, str) else {},
+            headers=args.get("headers", {}),
+        )
+        try:
+            r = await pool_manager.request(**args)
+        except RuntimeError as e:
+            if 'Event loop is closed' in e.args[0]:
+                asyncio.run(self.pool_manager.__aexit__(None, None, None))
+        else:
+            log_response = r.__dict__
+            data = await r.read()
+            log.msg(
+                "response",
+                method=args.get("url", None),
+                url=log_response.get("_url", None),
+                json=json.loads(data) if isinstance(data, bytes) and data else "{}",
+                headers=dict(log_response.get("_headers", {})),
+                status_code=log_response.get("status", None),
+            )
+            return RESTResponse(r)
